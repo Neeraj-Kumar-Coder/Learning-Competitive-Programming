@@ -6,6 +6,8 @@ class Suffix_Array
 {
 private:
     string input;
+    vector<int> suffixArray;
+    vector<int> lcpArray;
 
     void radix_sort(vector<int> &p, vector<int> &c)
     {
@@ -25,11 +27,13 @@ public:
 
     Suffix_Array(const string &str) { build(str); }
 
-    void build(const string &str) { input = str; }
+    void build(const string &str) { input = str + "$"; }
 
     vector<int> getSuffixArray(void)
     {
-        input += '$';
+        if (suffixArray.size())
+            return suffixArray;
+
         int length = input.length();
         vector<int> p(length), c(length);
 
@@ -54,8 +58,36 @@ public:
                 new_c[p[i]] = new_c[p[i - 1]] + (c[p[i]] == c[p[i - 1]] && c[(p[i] + (1 << k)) % length] == c[(p[i - 1] + (1 << k)) % length] ? 0 : 1);
             c = new_c;
         }
-        input.pop_back();
-        return p;
+        return suffixArray = p;
+    }
+
+    vector<int> getLCPArray(void)
+    {
+        if (lcpArray.size())
+            return lcpArray;
+
+        int length = input.length(), k = 0;
+        vector<int> lcp(length - 1, 0), inverseMap(length);
+        if (suffixArray.empty())
+            getSuffixArray();
+
+        for (int i = 0; i < length; i++)
+            inverseMap[suffixArray[i]] = i;
+
+        for (int i = 0; i < length; i++)
+        {
+            int pos = inverseMap[i];
+            if (pos == length - 1)
+                continue;
+
+            int j = suffixArray[pos + 1];
+            while (input[i + k] == input[j + k])
+                k++;
+
+            lcp[pos] = k;
+            k = max(0, k - 1);
+        }
+        return lcpArray = lcp;
     }
 };
 
@@ -67,6 +99,11 @@ int main(void)
     vector<int> suffixArray = sa.getSuffixArray();
     for (auto &&index : suffixArray)
         cout << index << ' ';
+    cout << '\n';
+
+    vector<int> lcpArray = sa.getLCPArray();
+    for (auto &&length : lcpArray)
+        cout << length << ' ';
     cout << '\n';
     return 0;
 }
